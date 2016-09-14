@@ -7,6 +7,7 @@
 
 ## Initialize and update submodules
 To initialize and update submodules, run `git submodule update --init` command. It will update the working tree of the submodules.
+To update submodules by specific branch, go to `.gitmodules` file and add `branch = branch_name` parameter to the module.
 
 ## Installation (Windows 10)
 1. Clone this repository && run `cd magento2-dev-box` in terminal
