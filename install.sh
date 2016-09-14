@@ -57,7 +57,11 @@ request () {
 while test $# -gt 0; do
     case $1 in
         --*)
-            export $(echo $1 | sed -e 's/^--\([^=]*\)=[^=]*$/\1/g' | sed -e 's/-/_/g')=$(echo $1 | sed -e 's/^[^=]*=//g')
+            export $( \
+                echo $1 | sed -e 's/^--\([^=]*\)=[^=]*$/\1/g' | sed -e 's/-/_/g' \
+            )=$( \
+                echo $1 | sed -e 's/^[^=]*=//g' \
+            )
             shift
             ;;
         *)
@@ -205,7 +209,8 @@ mkdir -p shared/db
 echo 'Build docker images'
 docker-compose up --build -d
 
-docker exec -it --privileged magento2-devbox-web /bin/sh -c 'chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 /var/www/magento2'
+docker exec -it --privileged magento2-devbox-web \
+    /bin/sh -c 'chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 /var/www/magento2'
 
 docker exec -it --privileged -u magento2 magento2-devbox-web \
     php -f /home/magento2/scripts/devbox magento:download \
@@ -269,8 +274,10 @@ if [[ $varnish_fpc = 1 ]]; then
     docker-compose restart varnish
 fi
 
-docker exec -it --privileged -u magento2 magento2-devbox-web mysql -h db -u root -proot -e 'CREATE DATABASE IF NOT EXISTS magento_integration_tests;'
-docker cp ./web/integration/install-config-mysql.php magento2-devbox-web:/var/www/magento2/dev/tests/integration/etc/install-config-mysql.php
+docker exec -it --privileged -u magento2 magento2-devbox-web \
+    mysql -h db -u root -proot -e 'CREATE DATABASE IF NOT EXISTS magento_integration_tests;'
+docker cp ./web/integration/install-config-mysql.php \
+    magento2-devbox-web:/var/www/magento2/dev/tests/integration/etc/install-config-mysql.php
 
 if [[ ! $static_deploy ]]; then
     static_deploy=1
