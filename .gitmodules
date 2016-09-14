@@ -1,0 +1,6 @@
+[submodule "varnish"]
+	path = varnish
+	url = https://github.com/magento-tango/magento2devbox-varnish.git
+[submodule "web"]
+	path = web
+	url = https://github.com/magento-tango/magento2devbox-web.git
