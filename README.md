@@ -5,6 +5,9 @@
 - Run PowerShell as administrator and give permission to run scripts with command: `Set-ExecutionPolicy Unrestricted`
 - For Windows Shared Drivers in Docker Settings should be enabled
 
+## Initialize and update submodules
+To initialize and update submodules, run `git submodule update --init` command. It will update the working tree of the submodules.
+
 ## Installation (Windows 10)
 1. Clone this repository && run `cd magento2-dev-box` in terminal
 2. Run `& ".\install.ps1"` in PowerShell - during command execution you will be asked for your magento repo credentials
