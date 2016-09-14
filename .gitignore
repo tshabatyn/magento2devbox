@@ -1,3 +1,5 @@
 .idea
 /docker-compose.yml
 /shared
+/web
+/varnish
