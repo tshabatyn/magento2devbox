@@ -213,7 +213,7 @@ docker exec -it --privileged magento2-devbox-web \
     /bin/sh -c 'chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 /var/www/magento2'
 
 docker exec -it --privileged -u magento2 magento2-devbox-web \
-    php -f /home/magento2/scripts/devbox magento:download \
+    php -f /home/magento2/scripts/m2init magento:download \
         --use-existing-sources=$use_existing_sources
 
 if [[ ! $install_sample_data ]]; then
@@ -233,7 +233,7 @@ if [[ ! $admin_password ]]; then
 fi
 
 docker exec -it --privileged -u magento2 magento2-devbox-web \
-    php -f /home/magento2/scripts/devbox magento:setup \
+    php -f /home/magento2/scripts/m2init magento:setup \
         --use-existing-sources=$use_existing_sources \
         --install-sample-data=$install_sample_data \
         --backend-path=$backend_path \
@@ -245,7 +245,7 @@ docker exec -it --privileged -u magento2 magento2-devbox-web \
 
 if [[ $install_redis = 1 ]]; then
     docker exec -it --privileged -u magento2 magento2-devbox-web \
-        php -f /home/magento2/scripts/devbox magento:setup:redis \
+        php -f /home/magento2/scripts/m2init magento:setup:redis \
             --as-all-cache=$redis_cache \
             --as-cache=$redis_fpc \
             --as-session=$redis_session \
@@ -257,7 +257,7 @@ if [[ $varnish_fpc = 1 ]]; then
     varnish_file=/home/magento2/scripts/default.vcl
 
     docker exec -it --privileged -u magento2 magento2-devbox-web \
-        php -f /home/magento2/scripts/devbox magento:setup:varnish \
+        php -f /home/magento2/scripts/m2init magento:setup:varnish \
             --db-host=$db_host \
             --db-port=$db_port \
             --db-user=$db_user \
@@ -292,7 +292,7 @@ if [[ ! $di_compile ]]; then
 fi
 
 docker exec -it --privileged -u magento2 magento2-devbox-web \
-    php -f /home/magento2/scripts/devbox magento:prepare \
+    php -f /home/magento2/scripts/m2init magento:finalize \
         --static-deploy=$static_deploy \
         --static-grunt-compile=$static_grunt_compile \
         --di-compile=$di_compile
