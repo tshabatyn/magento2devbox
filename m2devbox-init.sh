@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 get_free_port () {
     local port=$1
     while [[ $(lsof -i tcp:$port | grep "(LISTEN)") ]]
