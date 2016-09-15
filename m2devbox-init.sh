@@ -132,8 +132,7 @@ EOM
 rabbit_host='rabbit'
 rabbit_port=5672
 
-if [[ $install_rabbitmq = 1 ]]; then
-    cat << EOM >> docker-compose.yml
+cat << EOM >> docker-compose.yml
   $rabbit_host:
     container_name: magento2-devbox-rabbit
     image: rabbitmq:3-management
@@ -141,7 +140,6 @@ if [[ $install_rabbitmq = 1 ]]; then
       - "8282:15672"
       - "$rabbit_port:$rabbit_port"
 EOM
-fi
 
 redis_host='redis'
 
@@ -194,21 +192,33 @@ docker-compose up --build -d
 docker exec -it --privileged magento2-devbox-web \
     /bin/sh -c 'chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 /var/www/magento2'
 
+
+magento_sample_data=1
+backend_path=admin
+admin_user=admin
+admin_password=admin123
+install_rabbitmq=1
+redis_cache=1
+redis_fpc=0
+redis_session=1
+static_deploy=0
+static_grunt_compile=0
+di_compile=0
+
 docker exec -it --privileged -u magento2 magento2-devbox-web \
     php -f /home/magento2/scripts/m2init magento:install \
         --use-existing-sources=$use_existing_sources \
-        --use-existing-sources=$use_existing_sources \
-        --install-sample-data=$install_sample_data \
+        --magento-sample-data=$magento_sample_data \
         --backend-path=$backend_path \
         --admin-user=$admin_user \
         --admin-password=$admin_password \
         --rabbitmq-install=$install_rabbitmq \
-        --rabbitmq-host=$rabit_host \
+        --rabbitmq-host=$rabbit_host \
         --rabbitmq-port=$rabbit_port \
-        --as-all-cache=$redis_cache \
-        --as-cache=$redis_fpc \
-        --as-session=$redis_session \
-        --host=$redis_host \
+        --redis-cache=$redis_cache \
+        --redis-fpc=$redis_fpc \
+        --redis-session=$redis_session \
+        --redis-host=$redis_host \
         --magento-path=$magento_path \
         --db-host=$db_host \
         --db-port=$db_port \
