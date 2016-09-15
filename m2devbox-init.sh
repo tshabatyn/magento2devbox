@@ -87,16 +87,16 @@ done
 echo 'Creating docker-compose config'
 
 if [[ $webroot_path ]]; then
-    use_existing_sources=1
+    magento_sources_reuse=1
 else
     webroot_path='./shared/webroot'
 
-    if [[ ! $use_existing_sources ]]; then
-        request 'use_existing_sources' 'Do you have existing copy of Magento 2?' 1
+    if [[ ! $magento_sources_reuse ]]; then
+        request 'magento_sources_reuse' 'Do you have existing copy of Magento 2?' 1
     fi
 
-    if [[ $use_existing_sources = 1 ]]; then
-        request 'webroot_path' 'Please provide full path to the magento2 folder'
+    if [[ $magento_sources_reuse = 1 ]]; then
+        request 'webroot_path' 'Please provide full path to the Magento folder on local machine'
     fi
 fi
 
@@ -184,23 +184,23 @@ cat << EOM >> docker-compose.yml
 EOM
 
 magento_path='/var/www/magento2'
-main_host=web
-main_host_port=80
-main_host_container=magento2-devbox-web
-
+webserver_host=web
+webserver_port=80
+webserver_container=magento2-devbox-web
 web_port=$(get_free_port 1749)
+
 cat << EOM >> docker-compose.yml
-  $main_host:
+  $webserver_host:
     # image: magento/magento2devbox_web:latest
     build: web
-    container_name: $main_host_container
+    container_name: $webserver_container
     volumes:
       - $webroot_path:$magento_path
       - $composer_path:/home/magento2/.composer
       - $ssh_path:/home/magento2/.ssh
       #    - ./shared/.magento-cloud:/root/.magento-cloud
     ports:
-      - "$web_port:$main_host_port"
+      - "$web_port:$webserver_port"
       - "2222:22"
 EOM
 
@@ -214,50 +214,27 @@ echo 'Build docker images'
 docker-compose up --build -d
 
 docker exec -it --privileged magento2-devbox-web \
-    /bin/sh -c 'chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 /var/www/magento2'
-
-
-magento_sample_data=1
-backend_path=admin
-admin_user=admin
-admin_password=admin123
-install_rabbitmq=1
-redis_cache=1
-redis_fpc=0
-redis_session=1
-static_deploy=0
-static_grunt_compile=0
-di_compile=0
+    /bin/sh -c "chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 $magento_path"
 
 docker exec -it --privileged -u magento2 magento2-devbox-web \
     php -f /home/magento2/scripts/m2init magento:install \
-        --use-existing-sources=$use_existing_sources \
-        --magento-sample-data=$magento_sample_data \
-        --backend-path=$backend_path \
-        --admin-user=$admin_user \
-        --admin-password=$admin_password \
-        --rabbitmq-install=$install_rabbitmq \
+        --magento-sources-reuse=$magento_sources_reuse \
+        --magento-path=$magento_path \
         --rabbitmq-host=$rabbit_host \
         --rabbitmq-port=$rabbit_port \
-        --redis-cache=$redis_cache \
-        --redis-fpc=$redis_fpc \
-        --redis-session=$redis_session \
         --redis-host=$redis_host \
-        --magento-path=$magento_path \
         --db-host=$db_host \
         --db-port=$db_port \
         --db-user=$db_user \
         --db-name=$db_name \
         --db-password=$db_password \
-        --backend-host=$main_host \
-        --backend-port=$main_host_port \
-        --out-file-path=/home/magento2/scripts/default.vcl \
-        --static-deploy=$static_deploy \
-        --static-grunt-compile=$static_grunt_compile \
-        --di-compile=$di_compile \
-        --elastic-host=$elastic_host --elastic-port=$elastic_port
+        --webserver-host=$webserver_host \
+        --webserver-port=$webserver_port \
+        --varnish-config-path=/home/magento2/scripts/default.vcl \
+        --elastic-host=$elastic_host \
+        --elastic-port=$elastic_port
 
-docker cp "$main_host_container:/home/magento2/scripts/default.vcl" ./default.vcl.bak
+docker cp "$webserver_container:/home/magento2/scripts/default.vcl" ./default.vcl.bak
 docker cp ./default.vcl.bak $varnish_host_container:/etc/varnish/default.vcl
 rm ./default.vcl.bak
 
