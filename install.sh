@@ -267,9 +267,9 @@ if [[ $varnish_fpc = 1 ]]; then
             --backend-port=$main_host_port \
             --out-file-path=/home/magento2/scripts/default.vcl
 
-    docker cp "$main_host_container:/$varnish_file" ./web/scripts/command/default.vcl
-    docker cp ./web/scripts/command/default.vcl $varnish_host_container:/etc/varnish/default.vcl
-    rm ./web/scripts/command/default.vcl
+    docker cp "$main_host_container:/$varnish_file" ./web/scripts/Command/default.vcl
+    docker cp ./web/scripts/Command/default.vcl $varnish_host_container:/etc/varnish/default.vcl
+    rm ./web/scripts/Command/default.vcl
 
     docker-compose restart varnish
 fi
