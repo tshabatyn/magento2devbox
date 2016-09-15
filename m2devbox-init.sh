@@ -1,5 +1,15 @@
 #!/bin/bash
 
+
+get_free_port () {
+    local port=$1
+    while [[ $(lsof -i tcp:$port | grep "(LISTEN)") ]]
+    do
+        port=$RANDOM
+    done
+    echo $port
+}
+
 request () {
     local varName=$1
     local question=$2
@@ -107,6 +117,7 @@ db_port=3306
 db_password=root
 db_user=root
 db_name=magento2
+db_host_port=$(get_free_port 1345)
 
 cat > docker-compose.yml <<- EOM
 ##
@@ -121,7 +132,7 @@ services:
     restart: always
     image: mysql:5.6
     ports:
-      - "1345:$db_port"
+      - "$db_host_port:$db_port"
     environment:
       - MYSQL_ROOT_PASSWORD=$db_password
       - MYSQL_DATABASE=$db_name
@@ -131,14 +142,15 @@ EOM
 
 rabbit_host='rabbit'
 rabbit_port=5672
-
-cat << EOM >> docker-compose.yml
+rabbit_admin_host_port=$(get_free_port 8282)
+rabbit_host_port=$(get_free_port $rabbit_port)
+  cat << EOM >> docker-compose.yml
   $rabbit_host:
     container_name: magento2-devbox-rabbit
     image: rabbitmq:3-management
     ports:
-      - "8282:15672"
-      - "$rabbit_port:$rabbit_port"
+      - "$rabbit_admin_host_port:15672"
+      - "$rabbit_host_port:$rabbit_port"
 EOM
 
 redis_host='redis'
@@ -149,7 +161,7 @@ cat << EOM >> docker-compose.yml
     image: redis:3.0.7
 EOM
 
-web_port=1749
+varnish_host_port=$(get_free_port 1748)
 varnish_host_container=magento2-devbox-varnish
 
 cat << EOM >> docker-compose.yml
@@ -157,7 +169,18 @@ cat << EOM >> docker-compose.yml
     image: magento/magento2devbox_varnish:latest
     container_name: $varnish_host_container
     ports:
-      - "1748:6081"
+      - "$varnish_host_port:6081"
+EOM
+
+elastic_host='elasticsearch'
+elastic_port=9200
+elastic_local_port=$(get_free_port 9200)
+cat << EOM >> docker-compose.yml
+  $elastic_host:
+    image: elasticsearch:latest
+    container_name: magento2-devbox-elasticsearch
+    ports:
+      - "$elastic_local_port:$elastic_port"
 EOM
 
 magento_path='/var/www/magento2'
@@ -165,6 +188,7 @@ main_host=web
 main_host_port=80
 main_host_container=magento2-devbox-web
 
+web_port=$(get_free_port 1749)
 cat << EOM >> docker-compose.yml
   $main_host:
     # image: magento/magento2devbox_web:latest
@@ -230,7 +254,8 @@ docker exec -it --privileged -u magento2 magento2-devbox-web \
         --out-file-path=/home/magento2/scripts/default.vcl \
         --static-deploy=$static_deploy \
         --static-grunt-compile=$static_grunt_compile \
-        --di-compile=$di_compile
+        --di-compile=$di_compile \
+        --elastic-host=$elastic_host --elastic-port=$elastic_port
 
 docker cp "$main_host_container:/home/magento2/scripts/default.vcl" ./default.vcl.bak
 docker cp ./default.vcl.bak $varnish_host_container:/etc/varnish/default.vcl
