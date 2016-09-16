@@ -10,6 +10,23 @@ get_free_port () {
     echo $port
 }
 
+copy_file_between_containers () {
+    local sourceFile=$1
+    local targetFile=$2
+    local tmpPath=$3
+    local tmpIndex
+    local tmpFile
+
+    while [[ ! $tmpIndex ]] || [ -f $tmpFile ]; do
+        tmpIndex=$(jot -r 1 100000 999999)
+        tmpFile="$tmpPath/temp$tmpIndex"
+    done
+
+    docker cp $sourceFile $tmpFile
+    docker cp $tmpFile $targetFile
+    rm $tmpFile
+}
+
 request () {
     local varName=$1
     local question=$2
@@ -116,6 +133,7 @@ varnish_container=magento2-devbox-varnish
 varnish_port=6081
 varnish_home_port=$(get_free_port 1748)
 varnish_config_path='/home/magento2/scripts/default.vcl'
+varnish_container_config_path='/etc/varnish/default.vcl'
 
 #Elastic Search
 elastic_host='elasticsearch'
@@ -136,10 +154,10 @@ webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
 
 #Paths
 magento_path='/var/www/magento2'
-magento_cloud_path='./shared/.magento-cloud'
-magento_cloud_home_path='/root/.magento-cloud'
-composer_home_path='/home/magento2/.composer'
-ssh_home_path='/home/magento2/.ssh'
+magento_cloud_path='/root/.magento-cloud'
+composer_path='/home/magento2/.composer'
+ssh_path='/home/magento2/.ssh'
+tmp_home_path='./tmp'
 
 if [[ $magento_home_path ]]; then
     magento_sources_reuse=1
@@ -155,12 +173,16 @@ else
     fi
 fi
 
-if [[ ! $composer_path ]]; then
-    composer_path='./shared/.composer'
+if [[ ! $magento_cloud_home_path ]]; then
+    magento_cloud_home_path='./shared/.magento-cloud'
 fi
 
-if [[ ! $ssh_path ]]; then
-    ssh_path='./shared/.ssh'
+if [[ ! $composer_home_path ]]; then
+    composer_home_path='./shared/.composer'
+fi
+
+if [[ ! $ssh_home_path ]]; then
+    ssh_home_path='./shared/.ssh'
 fi
 
 cat > docker-compose.yml <<- EOM
@@ -208,25 +230,25 @@ services:
     container_name: $webserver_container
     volumes:
       - $magento_home_path:$magento_path
-      - $composer_path:$composer_home_path
-      - $ssh_path:$ssh_home_path
+      - $composer_home_path:$composer_path
+      - $ssh_home_path:$ssh_path
       - $webserver_home_apache_logs_path:$webserver_apache_logs_path
       - $webserver_home_phpfpm_logs_path:$webserver_phpfpm_logs_path
-#      - $magento_cloud_path:$magento_cloud_home_path
+#      - $magento_cloud_home_path:$magento_cloud_path"
     ports:
       - $webserver_home_port:$webserver_port
       - $webserver_home_ssh_port:$webserver_ssh_port
 EOM
 
 echo 'Creating shared and temporary folders'
-mkdir -p shared/.composer
-mkdir -p shared/.ssh
-mkdir -p shared/webroot
-mkdir -p shared/db
-mkdir -p shared/logs/apache2
-mkdir -p shared/logs/php-fpm
-mkdir -p shared/logs/mysql
-mkdir -p tmp
+mkdir -p $composer_home_path
+mkdir -p $ssh_home_path
+mkdir -p $magento_home_path
+mkdir -p $db_home_path
+mkdir -p $webserver_home_apache_logs_path
+mkdir -p $webserver_home_phpfpm_logs_path
+mkdir -p $db_home_logs_path
+mkdir -p $tmp_home_path
 
 echo 'Build docker images'
 docker-compose up --build -d
@@ -252,8 +274,8 @@ docker exec -it --privileged -u magento2 magento2-devbox-web \
         --elastic-host=$elastic_host \
         --elastic-port=$elastic_port
 
-docker cp $webserver_container:/home/magento2/scripts/default.vcl tmp/default.vcl.bak
-docker cp tmp/default.vcl.bak $varnish_container:/etc/varnish/default.vcl
+copy_file_between_containers "$webserver_container:$varnish_config_path" \
+    "$varnish_container:$varnish_container_config_path" $tmp_home_path
 docker-compose restart varnish
 
-rm -rf tmp
+rm -rf $tmp_home_path
