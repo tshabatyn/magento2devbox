@@ -3,8 +3,8 @@
 get_free_port () {
     local port=$1
 
-    while [[ $(lsof -i tcp:$port | grep "(LISTEN)") ]]; do
-        port=$RANDOM
+    while [[ ! $port ]] || [[ $(lsof -i tcp:$port | grep "(LISTEN)") ]]; do
+        port=$(jot -r 1 1 65000)
     done
 
     echo $port
@@ -35,7 +35,7 @@ request () {
 
     if [[ ${#value} > 0 ]]; then
         if [[ $isBoolean = 1 ]]; then
-            if echo $value | grep -Eiq '^(?:[1y]|yes|true)$'; then
+            if $(echo $value | grep -Eiq '^(?:[1y]|yes|true)$'); then
                 value=1
                 output='yes'
             else
