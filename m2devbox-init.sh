@@ -1,5 +1,17 @@
 #!/bin/bash
 
+generate_container_name () {
+    local service=$1
+    local number=1
+    local name="magento2devbox_${service}_${number}"
+
+    while [[ `docker ps -a -q --filter="name=$name"` ]]; do
+        ((number++))
+        name="magento2devbox_${service}_${number}"
+    done
+    echo $name
+}
+
 get_free_port () {
     local port=$1
 
@@ -8,23 +20,6 @@ get_free_port () {
     done
 
     echo $port
-}
-
-copy_file_between_containers () {
-    local sourceFile=$1
-    local targetFile=$2
-    local tmpPath=$3
-    local tmpIndex
-    local tmpFile
-
-    while [[ ! $tmpIndex ]] || [ -f $tmpFile ]; do
-        tmpIndex=$(jot -r 1 100000 999999)
-        tmpFile="$tmpPath/temp$tmpIndex"
-    done
-
-    docker cp $sourceFile $tmpFile
-    docker cp $tmpFile $targetFile
-    rm $tmpFile
 }
 
 request () {
@@ -129,7 +124,7 @@ rabbitmq_home_admin_port=$(get_free_port 8282)
 redis_host='redis'
 
 #Varnish
-varnish_container=magento2-devbox-varnish
+varnish_container=`generate_container_name varnish`
 varnish_port=6081
 varnish_home_port=$(get_free_port 1748)
 varnish_config_path='/home/magento2/scripts/default.vcl'
@@ -141,7 +136,7 @@ elastic_port=9200
 elastic_home_port=$(get_free_port 9200)
 
 #Web Server
-webserver_container=magento2-devbox-web
+webserver_container=`generate_container_name db`
 webserver_host=web
 webserver_port=80
 webserver_ssh_port=22
@@ -194,7 +189,6 @@ cat > docker-compose.yml <<- EOM
 version: '2'
 services:
   $db_host:
-    container_name: magento2-devbox-db
     restart: always
     image: mysql:5.6
     ports:
@@ -206,13 +200,11 @@ services:
       - $db_home_path:$db_path
       - $db_home_logs_path:$db_logs_path
   $rabbitmq_host:
-    container_name: magento2-devbox-rabbit
     image: rabbitmq:3-management
     ports:
       - $rabbitmq_home_admin_port:$rabbitmq_admin_port
       - $rabbitmq_home_port:$rabbitmq_port
   $redis_host:
-    container_name: magento2-devbox-redis
     image: redis:3.0.7
   varnish:
     image: magento/magento2devbox_varnish:latest
@@ -221,7 +213,6 @@ services:
       - $varnish_home_port:$varnish_port
   $elastic_host:
     image: elasticsearch:latest
-    container_name: magento2-devbox-elasticsearch
     ports:
       - $elastic_home_port:$elastic_port
   $webserver_host:
@@ -274,8 +265,6 @@ docker exec -it --privileged -u magento2 magento2-devbox-web \
         --elastic-host=$elastic_host \
         --elastic-port=$elastic_port
 
-copy_file_between_containers "$webserver_container:$varnish_config_path" \
-    "$varnish_container:$varnish_container_config_path" $tmp_home_path
-docker-compose restart varnish
+docker scp $webserver_container:$varnish_config_path $varnish_container:$varnish_container_config_path
 
-rm -rf $tmp_home_path
+docker-compose restart varnish
