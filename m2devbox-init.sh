@@ -94,6 +94,8 @@ db_name='magento2'
 db_port=3306
 db_home_port=$(get_free_port 1345)
 db_path='/var/lib/mysql'
+db_logs_path='/var/log/mysql'
+db_home_logs_path='./shared/logs/mysql'
 
 if [[ ! $db_home_path ]]; then
     db_home_path='./shared/db'
@@ -127,6 +129,10 @@ webserver_port=80
 webserver_ssh_port=22
 webserver_home_port=$(get_free_port 1749)
 webserver_home_ssh_port=$(get_free_port 2222)
+webserver_apache_logs_path='/var/log/apache2'
+webserver_phpfpm_logs_path='/var/log/php-fpm'
+webserver_home_apache_logs_path='./shared/logs/apache2'
+webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
 
 #Paths
 magento_path='/var/www/magento2'
@@ -176,7 +182,7 @@ services:
       - MYSQL_DATABASE=$db_name
     volumes:
       - $db_home_path:$db_path
-      - ./shared/logs/mysql:/var/log/mysql
+      - $db_home_logs_path:$db_logs_path
   $rabbitmq_host:
     container_name: magento2-devbox-rabbit
     image: rabbitmq:3-management
@@ -204,8 +210,8 @@ services:
       - $magento_home_path:$magento_path
       - $composer_path:$composer_home_path
       - $ssh_path:$ssh_home_path
-      - ./shared/logs/apache2:/var/log/apache2
-      - ./shared/logs/php-fpm:/var/log/php-fpm
+      - $webserver_home_apache_logs_path:$webserver_apache_logs_path
+      - $webserver_home_phpfpm_logs_path:$webserver_phpfpm_logs_path
 #      - $magento_cloud_path:$magento_cloud_home_path
     ports:
       - $webserver_home_port:$webserver_port
