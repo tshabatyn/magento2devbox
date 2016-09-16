@@ -192,43 +192,43 @@ services:
     restart: always
     image: mysql:5.6
     ports:
-      - $db_home_port:$db_port
+      - "$db_home_port:$db_port"
     environment:
-      - MYSQL_ROOT_PASSWORD=$db_password
-      - MYSQL_DATABASE=$db_name
+      - MYSQL_ROOT_PASSWORD="$db_password"
+      - MYSQL_DATABASE="$db_name"
     volumes:
-      - $db_home_path:$db_path
-      - $db_home_logs_path:$db_logs_path
+      - "$db_home_path:$db_path"
+      - "$db_home_logs_path:$db_logs_path"
   $rabbitmq_host:
     image: rabbitmq:3-management
     ports:
-      - $rabbitmq_home_admin_port:$rabbitmq_admin_port
-      - $rabbitmq_home_port:$rabbitmq_port
+      - "$rabbitmq_home_admin_port:$rabbitmq_admin_port"
+      - "$rabbitmq_home_port:$rabbitmq_port"
   $redis_host:
     image: redis:3.0.7
   varnish:
     image: magento/magento2devbox_varnish:latest
-    container_name: $varnish_container
+    container_name: "$varnish_container"
     ports:
-      - $varnish_home_port:$varnish_port
+      - "$varnish_home_port:$varnish_port"
   $elastic_host:
     image: elasticsearch:latest
     ports:
-      - $elastic_home_port:$elastic_port
+      - "$elastic_home_port:$elastic_port"
   $webserver_host:
 #    image: magento/magento2devbox_web:latest
     build: web
-    container_name: $webserver_container
+    container_name: "$webserver_container"
     volumes:
-      - $magento_home_path:$magento_path
-      - $composer_home_path:$composer_path
-      - $ssh_home_path:$ssh_path
-      - $webserver_home_apache_logs_path:$webserver_apache_logs_path
-      - $webserver_home_phpfpm_logs_path:$webserver_phpfpm_logs_path
-#      - $magento_cloud_home_path:$magento_cloud_path"
+      - "$magento_home_path:$magento_path"
+      - "$composer_home_path:$composer_path"
+      - "$ssh_home_path:$ssh_path"
+      - "$webserver_home_apache_logs_path:$webserver_apache_logs_path"
+      - "$webserver_home_phpfpm_logs_path:$webserver_phpfpm_logs_path"
+#      - "$magento_cloud_home_path:$magento_cloud_path"
     ports:
-      - $webserver_home_port:$webserver_port
-      - $webserver_home_ssh_port:$webserver_ssh_port
+      - "$webserver_home_port:$webserver_port"
+      - "$webserver_home_ssh_port:$webserver_ssh_port"
 EOM
 
 echo 'Creating shared folders'
