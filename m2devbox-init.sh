@@ -254,6 +254,6 @@ docker exec -it --privileged -u magento2 magento2-devbox-web \
 
 docker cp $webserver_container:/home/magento2/scripts/default.vcl tmp/default.vcl.bak
 docker cp tmp/default.vcl.bak $varnish_container:/etc/varnish/default.vcl
-
 docker-compose restart varnish
+
 rm -rf tmp
