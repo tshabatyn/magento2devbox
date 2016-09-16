@@ -137,6 +137,7 @@ services:
       - MYSQL_DATABASE=$db_name
     volumes:
       - $db_path:/var/lib/mysql
+      - ./shared/logs/mysql:/var/log/mysql
 EOM
 
 rabbit_host='rabbit'
@@ -197,6 +198,8 @@ cat << EOM >> docker-compose.yml
       - $webroot_path:$magento_path
       - $composer_path:/home/magento2/.composer
       - $ssh_path:/home/magento2/.ssh
+      - ./shared/logs/apache2:/var/log/apache2
+      - ./shared/logs/php-fpm:/var/log/php-fpm
       #    - ./shared/.magento-cloud:/root/.magento-cloud
     ports:
       - "$web_port:$webserver_port"
@@ -208,6 +211,9 @@ mkdir -p shared/.composer
 mkdir -p shared/.ssh
 mkdir -p shared/webroot
 mkdir -p shared/db
+mkdir -p shared/logs/apache2
+mkdir -p shared/logs/php-fpm
+mkdir -p shared/logs/mysql
 
 echo 'Build docker images'
 docker-compose up --build -d
