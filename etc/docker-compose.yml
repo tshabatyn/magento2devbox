@@ -15,7 +15,7 @@ services:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=magento2
     volumes:
-      - ./shared/db:/var/lib/mysql
+      - ../../shared/db:/var/lib/mysql
   rabbit:
     container_name: magento2-devbox-rabbit
     image: rabbitmq:3-management
@@ -33,12 +33,12 @@ services:
     ports:
       - "1748:6081"
   web:
-    image: magento/magento2devbox_web:latest
+    build: ../web
     container_name: magento2-devbox-web
     volumes:
-      - ./shared/webroot:/var/www/magento2
-      - ./shared/.composer:/home/magento2/.composer
-      - ./shared/.ssh:/home/magento2/.ssh
-      - ./shared/.magento-cloud:/home/magento2/.magento-cloud
+      - ../shared/magento:/var/www/magento2
+      - ../shared/.composer:/home/magento2/.composer
+      - ../shared/.ssh:/home/magento2/.ssh
+      - ../shared/.magento-cloud:/home/magento2/.magento-cloud
     ports:
       - "1749:80"
