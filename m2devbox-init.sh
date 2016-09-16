@@ -9,6 +9,7 @@ generate_container_name () {
         ((number++))
         name="magento2devbox_${service}_${number}"
     done
+
     echo $name
 }
 
@@ -124,7 +125,7 @@ rabbitmq_home_admin_port=$(get_free_port 8282)
 redis_host='redis'
 
 #Varnish
-varnish_container=`generate_container_name varnish`
+varnish_container=$(generate_container_name 'varnish')
 varnish_port=6081
 varnish_home_port=$(get_free_port 1748)
 varnish_config_path='/home/magento2/scripts/default.vcl'
@@ -136,7 +137,7 @@ elastic_port=9200
 elastic_home_port=$(get_free_port 9200)
 
 #Web Server
-webserver_container=`generate_container_name db`
+webserver_container=$(generate_container_name 'web')
 webserver_host=web
 webserver_port=80
 webserver_ssh_port=22
@@ -152,7 +153,6 @@ magento_path='/var/www/magento2'
 magento_cloud_path='/root/.magento-cloud'
 composer_path='/home/magento2/.composer'
 ssh_path='/home/magento2/.ssh'
-tmp_home_path='./tmp'
 
 if [[ $magento_home_path ]]; then
     magento_sources_reuse=1
@@ -231,7 +231,7 @@ services:
       - $webserver_home_ssh_port:$webserver_ssh_port
 EOM
 
-echo 'Creating shared and temporary folders'
+echo 'Creating shared folders'
 mkdir -p $composer_home_path
 mkdir -p $ssh_home_path
 mkdir -p $magento_home_path
@@ -239,15 +239,14 @@ mkdir -p $db_home_path
 mkdir -p $webserver_home_apache_logs_path
 mkdir -p $webserver_home_phpfpm_logs_path
 mkdir -p $db_home_logs_path
-mkdir -p $tmp_home_path
 
 echo 'Build docker images'
 docker-compose up --build -d
 
-docker exec -it --privileged magento2-devbox-web \
+docker exec -it --privileged $webserver_container \
     /bin/sh -c "chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 $magento_path"
 
-docker exec -it --privileged -u magento2 magento2-devbox-web \
+docker exec -it --privileged -u magento2 $webserver_container \
     php -f /home/magento2/scripts/m2init magento:install \
         --magento-sources-reuse=$magento_sources_reuse \
         --magento-path=$magento_path \
@@ -265,6 +264,5 @@ docker exec -it --privileged -u magento2 magento2-devbox-web \
         --elastic-host=$elastic_host \
         --elastic-port=$elastic_port
 
-docker scp $webserver_container:$varnish_config_path $varnish_container:$varnish_container_config_path
-
+docker-machine scp $webserver_container:$varnish_config_path $varnish_container:$varnish_container_config_path
 docker-compose restart varnish
