@@ -64,19 +64,6 @@ To compile CSS out of LESS via Grunt you need:
  - PHPUnit Library: Use Composer autoloader
  - Path to script: /var/www/magento2/vendor/autoload.php
  
-## Use Magento CLI (bin/magento)
- Go to 'magento2-dev-box' directory and run in command line:
- 
- For Linux/Mac OS run:
- `bash m-bin-magento <command_name>`
- e.g.
- `bash m-bin-magento list`
-
- For Windows run in PowerShell:
- `.\m-bin-magento.ps1 <command_name>`
- e.g.
- `.\m-bin-magento.ps1 list`
- 
 ## FAQ
 1. If Xdebug does not work. Solution:
 - For Mac OS run in terminal `ifconfig | grep inet` and get your ip address. Windows users check this article: https://support.microsoft.com/en-us/help/15291/windows-find-pc-ip-address
