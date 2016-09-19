@@ -194,8 +194,8 @@ services:
     ports:
       - "$db_home_port:$db_port"
     environment:
-      - MYSQL_ROOT_PASSWORD="$db_password"
-      - MYSQL_DATABASE="$db_name"
+      - MYSQL_ROOT_PASSWORD=$db_password
+      - MYSQL_DATABASE=$db_name
     volumes:
       - "$db_home_path:$db_path"
       - "$db_home_logs_path:$db_logs_path"
