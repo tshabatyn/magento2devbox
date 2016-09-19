@@ -101,8 +101,8 @@ echo 'Creating docker-compose config'
 
 #Database
 db_host='db'
-db_password='root'
 db_user='root'
+db_password='root'
 db_name='magento2'
 db_port=3306
 db_home_port=$(get_free_port 1345)
@@ -246,23 +246,28 @@ docker-compose up --build -d
 docker exec -it --privileged $webserver_container \
     /bin/sh -c "chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 $magento_path"
 
+options="--magento-sources-reuse=$magento_sources_reuse
+    --magento-path=$magento_path
+    --webserver-host=$webserver_host
+    --webserver-port=$webserver_port
+    --db-host=$db_host
+    --db-port=$db_port
+    --db-user=$db_user
+    --db-name=$db_name
+    --db-password=$db_password
+    --rabbitmq-host=$rabbitmq_host
+    --rabbitmq-port=$rabbitmq_port
+    --redis-host=$redis_host
+    --varnish-config-path=$varnish_config_path
+    --elastic-host=$elastic_host
+    --elastic-port=$elastic_port"
+
+if [[ $interactive != 1 ]]; then
+    options="$options --no-interaction"
+fi
+
 docker exec -it --privileged -u magento2 $webserver_container \
-    php -f /home/magento2/scripts/m2init magento:install \
-        --magento-sources-reuse=$magento_sources_reuse \
-        --magento-path=$magento_path \
-        --webserver-host=$webserver_host \
-        --webserver-port=$webserver_port \
-        --db-host=$db_host \
-        --db-port=$db_port \
-        --db-user=$db_user \
-        --db-name=$db_name \
-        --db-password=$db_password \
-        --rabbitmq-host=$rabbitmq_host \
-        --rabbitmq-port=$rabbitmq_port \
-        --redis-host=$redis_host \
-        --varnish-config-path=$varnish_config_path \
-        --elastic-host=$elastic_host \
-        --elastic-port=$elastic_port
+    php -f /home/magento2/scripts/m2init magento:install $options
 
 docker-machine scp $webserver_container:$varnish_config_path $varnish_container:$varnish_container_config_path
 docker-compose restart varnish
