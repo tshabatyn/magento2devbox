@@ -46,7 +46,7 @@ store_option () {
     local key=$1
     local value=$2
 
-    store_data 'options' "\"$value\"" ' ' $key '=' '--' &> /dev/null
+    store_data 'options' $value ' ' $key '=' '--' &> /dev/null
     echo $value
 }
 
