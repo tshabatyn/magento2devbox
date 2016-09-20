@@ -146,8 +146,8 @@ redis_host=$(store_option 'redis-host' 'redis')
 #Varnish
 varnish_port=6081
 varnish_home_port=$(get_free_port 1748)
-varnish_config_dir=$(store_option 'varnish-config-path' '/home/magento2/configs/varnish')
-varnish_config_path="$varnish_config_dir/default.vcl"
+varnish_config_dir='/home/magento2/configs/varnish'
+varnish_config_path=$(store_option 'varnish-config-path' "$varnish_config_dir/default.vcl")
 varnish_shared_dir="./shared/configs/varnish"
 varnish_container_config_path='/etc/varnish/default'
 
