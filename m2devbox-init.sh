@@ -1,5 +1,53 @@
 #!/bin/bash
 
+get_data () {
+    local file_name=$1
+    local folder_path='tmp'
+    local file_path="$folder_path/$file_name"
+    local contents
+
+    if [ -f $file_path ]; then
+        contents=$(cat $file_path)
+    fi
+
+    echo $contents
+}
+
+store_data () {
+    local file_name=$1
+    local value=$2
+    local delimiter=$3
+    local key=$4
+    local key_value_delimiter=$5
+    local prefix=$6
+    local suffix=$7
+    local folder_path='tmp'
+    local file_path="$folder_path/$file_name"
+    local contents=$(get_data $file_name)
+
+    if [[ $contents ]]; then
+        contents="$contents$delimiter"
+    fi
+
+    contents="$contents$prefix"
+
+    if [[ $key ]]; then
+        contents="$contents$key$key_value_delimiter"
+    fi
+
+    contents="$contents$value$suffix"
+    mkdir -p $folder_path && echo $contents > $file_path
+    echo $value
+}
+
+store_option () {
+    local key=$1
+    local value=$2
+
+    store_data 'options' "\"$value\"" ' ' $key '=' '--' &> /dev/null
+    echo $value
+}
+
 get_free_port () {
     local port=$1
 
@@ -64,34 +112,14 @@ request () {
     echo $output
 }
 
-while test $# -gt 0; do
-    case $1 in
-        -it)
-            interactive=1
-            shift
-            ;;
-        --*)
-            export $( \
-                echo $1 | sed -e 's/^--\([^=]*\)=[^=]*$/\1/g' | sed -e 's/-/_/g' \
-            )=$( \
-                echo $1 | sed -e 's/^[^=]*=//g' \
-            )
-            shift
-            ;;
-        *)
-            break
-            ;;
-    esac
-done
-
 echo 'Creating docker-compose config'
 
 #Database
-db_host='db'
-db_user='root'
-db_password='root'
-db_name='magento2'
-db_port=3306
+db_host=$(store_option 'db-host' 'db')
+db_user=$(store_option 'db-user' 'root')
+db_password=$(store_option 'db-password' 'root')
+db_name=$(store_option 'db-name' 'magento2')
+db_port=$(store_option 'db-port' 3306)
 db_home_port=$(get_free_port 1345)
 db_path='/var/lib/mysql'
 db_logs_path='/var/log/mysql'
@@ -102,31 +130,31 @@ if [[ ! $db_home_path ]]; then
 fi
 
 #RabbitMQ
-rabbitmq_host='rabbit'
-rabbitmq_port=5672
+rabbitmq_host=$(store_option 'rabbitmq-host' 'rabbit')
+rabbitmq_port=$(store_option 'rabbitmq-port' 5672)
 rabbitmq_admin_port=15672
 rabbitmq_home_port=$(get_free_port $rabbitmq_port)
 rabbitmq_home_admin_port=$(get_free_port 8282)
 
 #Redis
-redis_host='redis'
+redis_host=$(store_option 'redis-host' 'redis')
 
 #Varnish
 varnish_port=6081
 varnish_home_port=$(get_free_port 1748)
-varnish_config_dir='/home/magento2/configs/varnish'
+varnish_config_dir=$(store_option 'varnish-config-path' '/home/magento2/configs/varnish')
 varnish_config_path="$varnish_config_dir/default.vcl"
 varnish_shared_dir="./shared/configs/varnish"
 varnish_container_config_path='/etc/varnish/default'
 
 #Elastic Search
-elastic_host='elasticsearch'
-elastic_port=9200
+elastic_host=$(store_option 'elastic-host' 'elasticsearch')
+elastic_port=$(store_option 'elastic-port' 9200)
 elastic_home_port=$(get_free_port 9200)
 
 #Web Server
-webserver_host=web
-webserver_port=80
+webserver_host=$(store_option 'webserver-host' 'web')
+webserver_port=$(store_option 'webserver-port' 80)
 webserver_ssh_port=22
 webserver_home_port=$(get_free_port 1749)
 webserver_home_ssh_port=$(get_free_port 2222)
@@ -136,10 +164,30 @@ webserver_home_apache_logs_path='./shared/logs/apache2'
 webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
 
 #Paths
-magento_path='/var/www/magento2'
+magento_path=$(store_option 'magento-path' '/var/www/magento2')
 magento_cloud_path='/root/.magento-cloud'
 composer_path='/home/magento2/.composer'
 ssh_path='/home/magento2/.ssh'
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        -it)
+            interactive=1
+            shift
+            ;;
+        --*)
+            key=$(echo $1 | sed -e 's/^--\([^=]*\)=[^=]*$/\1/g')
+            var_name=$(echo $key | sed -e 's/-/_/g')
+            value=$(echo $1 | sed -e 's/^[^=]*=//g')
+            export $var_name=$value
+            store_option $key $value &> /dev/null
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 if [[ $magento_home_path ]]; then
     magento_sources_reuse=1
@@ -166,6 +214,8 @@ fi
 if [[ ! $ssh_home_path ]]; then
     ssh_home_path='./shared/.ssh'
 fi
+
+store_option 'magento-sources-reuse' $magento_sources_reuse &> /dev/null
 
 cat > docker-compose.yml <<- EOM
 ##
@@ -237,21 +287,7 @@ webserver_container=`docker-compose ps -q $webserver_host`
 docker exec -it --privileged $webserver_container \
     /bin/sh -c "chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 $magento_path"
 
-options="--magento-sources-reuse=$magento_sources_reuse
-    --magento-path=$magento_path
-    --webserver-host=$webserver_host
-    --webserver-port=$webserver_port
-    --db-host=$db_host
-    --db-port=$db_port
-    --db-user=$db_user
-    --db-name=$db_name
-    --db-password=$db_password
-    --rabbitmq-host=$rabbitmq_host
-    --rabbitmq-port=$rabbitmq_port
-    --redis-host=$redis_host
-    --varnish-config-path=$varnish_config_path
-    --elastic-host=$elastic_host
-    --elastic-port=$elastic_port"
+options=$(get_data 'options')
 
 if [[ $interactive != 1 ]]; then
     options="$options --no-interaction"
@@ -259,3 +295,5 @@ fi
 
 docker exec -it --privileged -u magento2 $webserver_container \
     php -f /home/magento2/scripts/m2init magento:install $options
+
+rm -rf tmp
