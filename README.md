@@ -33,15 +33,16 @@ If you want to configure PhpStorm automatically, run `configure_php_storm` scrip
 
 ## Static content deploy
 To deploy static view files you need:
-- Enter docker container by running: `docker exec -it --privileged magento2-devbox-web /bin/bash`
-- Enter magento root: `cd \var\www\magento2`
+- Enter docker container by running: `docker exec -it --privileged {web container name} /bin/bash`
+- Enter magento root: `cd /var/www/magento2`
 - Deploy static files: `php bin/magento setup:static-content:deploy`
 
 ## Compile CSS styles with Grunt
 To compile CSS out of LESS via Grunt you need:
-- Enter docker container by running: `docker exec -it --privileged magento2-devbox-web /bin/bash`
-- Enter magento root: `cd \var\www\magento2`
-- Run: `npm install && grunt refresh`
+- Enter docker container by running: `docker exec -it --privileged {web container name} /bin/bash`
+- Enter magento root: `cd /var/www/magento2`
+- Run: `cp Gruntfile.js.sample Gruntfile.js && cp package.json.sample package.json`
+- Run: `npm install & grunt refresh`
 
 ## Configure PhpStorm to run tests:
 1. Go to Languages & Frameworks > PHP and add new Interpreter:
@@ -67,11 +68,11 @@ To compile CSS out of LESS via Grunt you need:
 ## FAQ
 1. If Xdebug does not work. Solution:
 - For Mac OS run in terminal `ifconfig | grep inet` and get your ip address. Windows users check this article: https://support.microsoft.com/en-us/help/15291/windows-find-pc-ip-address
-- Go to web container: `docker exec -it --privileged magento2-devbox-web /bin/bash`
+- Go to web container: `docker exec -it --privileged {web container name} /bin/bash`
 - Within container go to: `/usr/local/etc/php/conf.d`
 - Open file: `vi docker-php-ext-xdebug.ini`
 - Start to edit it by typing: `i`
 - Add row: `xdebug.remote_host=<your_ip_from_step_1>`
 - Set: `xdebug.remote_connect_back=0`
 - Quit vi by typing: `Esc` -> `:wq`
-- Restart web container in your terminal: `docker restart magento2-devbox-web`
+- Restart web container in your terminal: `docker restart {web container name}`
