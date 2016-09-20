@@ -6,7 +6,6 @@
 version: '2'
 services:
   db:
-    container_name: magento2-devbox-db
     restart: always
     image: mysql:5.6
     ports:
@@ -17,28 +16,27 @@ services:
     volumes:
       - ../../shared/db:/var/lib/mysql
   rabbit:
-    container_name: magento2-devbox-rabbit
     image: rabbitmq:3-management
     ports:
       - "8282:15672"
       - "5672:5672"
   redis:
-    container_name: magento2-devbox-redis
     image: redis:3.0.7
   varnish:
     image: magento/magento2devbox_varnish:latest
-    container_name: magento2-devbox-varnish
+    volumes:
+      - ../shared/configs/varnish:/etc/varnish/default
     links:
       - web:web
     ports:
       - "1748:6081"
   web:
     build: ../web
-    container_name: magento2-devbox-web
     volumes:
       - ../shared/magento:/var/www/magento2
       - ../shared/.composer:/home/magento2/.composer
       - ../shared/.ssh:/home/magento2/.ssh
       - ../shared/.magento-cloud:/home/magento2/.magento-cloud
+      - ../shared/configs/varnish:/home/magento2/configs/varnish
     ports:
       - "1749:80"

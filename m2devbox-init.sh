@@ -1,18 +1,5 @@
 #!/bin/bash
 
-generate_container_name () {
-    local service=$1
-    local number=1
-    local name="magento2devbox_${service}_${number}"
-
-    while [[ `docker ps -a -q --filter="name=$name"` ]]; do
-        ((number++))
-        name="magento2devbox_${service}_${number}"
-    done
-
-    echo $name
-}
-
 get_free_port () {
     local port=$1
 
@@ -125,11 +112,12 @@ rabbitmq_home_admin_port=$(get_free_port 8282)
 redis_host='redis'
 
 #Varnish
-varnish_container=$(generate_container_name 'varnish')
 varnish_port=6081
 varnish_home_port=$(get_free_port 1748)
-varnish_config_path='/home/magento2/scripts/default.vcl'
-varnish_container_config_path='/etc/varnish/default.vcl'
+varnish_config_dir='/home/magento2/configs/varnish'
+varnish_config_path="$varnish_config_dir/default.vcl"
+varnish_shared_dir="./shared/configs/varnish"
+varnish_container_config_path='/etc/varnish/default'
 
 #Elastic Search
 elastic_host='elasticsearch'
@@ -137,7 +125,6 @@ elastic_port=9200
 elastic_home_port=$(get_free_port 9200)
 
 #Web Server
-webserver_container=$(generate_container_name 'web')
 webserver_host=web
 webserver_port=80
 webserver_ssh_port=22
@@ -208,7 +195,9 @@ services:
     image: redis:3.0.7
   varnish:
     image: magento/magento2devbox_varnish:latest
-    container_name: "$varnish_container"
+#    build: varnish
+    volumes:
+      - "$varnish_shared_dir:$varnish_container_config_path"
     ports:
       - "$varnish_home_port:$varnish_port"
   $elastic_host:
@@ -216,15 +205,15 @@ services:
     ports:
       - "$elastic_home_port:$elastic_port"
   $webserver_host:
-#    image: magento/magento2devbox_web:latest
-    build: web
-    container_name: "$webserver_container"
+    image: magento/magento2devbox_web:latest
+#    build: web
     volumes:
       - "$magento_home_path:$magento_path"
       - "$composer_home_path:$composer_path"
       - "$ssh_home_path:$ssh_path"
       - "$webserver_home_apache_logs_path:$webserver_apache_logs_path"
       - "$webserver_home_phpfpm_logs_path:$webserver_phpfpm_logs_path"
+      - "$varnish_shared_dir:$varnish_config_dir"
 #      - "$magento_cloud_home_path:$magento_cloud_path"
     ports:
       - "$webserver_home_port:$webserver_port"
@@ -239,10 +228,12 @@ mkdir -p $db_home_path
 mkdir -p $webserver_home_apache_logs_path
 mkdir -p $webserver_home_phpfpm_logs_path
 mkdir -p $db_home_logs_path
+mkdir -p $varnish_shared_dir
 
 echo 'Build docker images'
 docker-compose up --build -d
 
+webserver_container=`docker-compose ps -q $webserver_host`
 docker exec -it --privileged $webserver_container \
     /bin/sh -c "chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 $magento_path"
 
@@ -268,6 +259,3 @@ fi
 
 docker exec -it --privileged -u magento2 $webserver_container \
     php -f /home/magento2/scripts/m2init magento:install $options
-
-docker-machine scp $webserver_container:$varnish_config_path $varnish_container:$varnish_container_config_path
-docker-compose restart varnish
