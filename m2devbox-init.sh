@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf tmp
+
 get_data () {
     local file_name=$1
     local folder_path='tmp'
@@ -50,10 +52,12 @@ store_option () {
 
 get_free_port () {
     local port=$1
+    local used_ports=$(get_data 'ports')
 
-    while [[ ! $port ]] || [[ $(lsof -i tcp:$port | grep "(LISTEN)") ]]; do
+    while [[ ! $port ]] || [[ $(lsof -i tcp:$port | grep "(LISTEN)") ]] || [[ $used_ports == *"|$port|"* ]]; do
         port=$(jot -r 1 1 65000)
     done
+    store_data 'ports' $port '' '' '' '|' '|' &> /dev/null
 
     echo $port
 }
@@ -244,8 +248,8 @@ services:
   $redis_host:
     image: redis:3.0.7
   varnish:
-    image: magento/magento2devbox_varnish:latest
-#    build: varnish
+#    image: magento/magento2devbox_varnish:latest
+    build: varnish
     volumes:
       - "$varnish_shared_dir:$varnish_container_config_path"
     ports:
@@ -255,8 +259,8 @@ services:
     ports:
       - "$elastic_home_port:$elastic_port"
   $webserver_host:
-    image: magento/magento2devbox_web:latest
-#    build: web
+#    image: magento/magento2devbox_web:latest
+    build: web
     volumes:
       - "$magento_home_path:$magento_path"
       - "$composer_home_path:$composer_path"
