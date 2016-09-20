@@ -36,7 +36,7 @@ services:
     build: ../web
     container_name: magento2-devbox-web
     volumes:
-      - ../shared/magento:/var/www/magento2
+      - ../shared/magento2:/home/magento2/magento2
       - ../shared/.composer:/home/magento2/.composer
       - ../shared/.ssh:/home/magento2/.ssh
       - ../shared/.magento-cloud:/home/magento2/.magento-cloud
