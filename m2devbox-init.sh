@@ -57,6 +57,7 @@ get_free_port () {
     while [[ ! $port ]] || [[ $(lsof -i tcp:$port | grep "(LISTEN)") ]] || [[ $used_ports == *"|$port|"* ]]; do
         port=$(jot -r 1 1 65000)
     done
+
     store_data 'ports' $port '' '' '' '|' '|' &> /dev/null
 
     echo $port
