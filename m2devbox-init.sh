@@ -146,7 +146,7 @@ redis_host=$(store_option 'redis-host' 'redis')
 
 #Varnish
 varnish_port=6081
-varnish_home_port=$(get_free_port 1748)
+varnish_home_port=$(get_free_port 1749) && $(store_option 'varnish-home-port' $varnish_home_port) &> /dev/null
 varnish_config_dir='/home/magento2/configs/varnish'
 varnish_config_path=$(store_option 'varnish-config-path' "$varnish_config_dir/default.vcl")
 varnish_shared_dir="./shared/configs/varnish"
@@ -161,14 +161,15 @@ elastic_home_port=$(get_free_port 9200)
 webserver_host=$(store_option 'webserver-host' 'web')
 webserver_port=$(store_option 'webserver-port' 80)
 webserver_ssh_port=22
-webserver_home_port=$(get_free_port 1749)
+webserver_home_port=$(get_free_port 1748) && $(store_option 'webserver-home-port' $webserver_home_port) &> /dev/null
 webserver_home_ssh_port=$(get_free_port 2222)
 webserver_apache_logs_path='/var/log/apache2'
 webserver_phpfpm_logs_path='/var/log/php-fpm'
 webserver_home_apache_logs_path='./shared/logs/apache2'
 webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
 
-#Paths
+#Magento
+magento_host=$(store_option 'magento-host' 'localhost')
 magento_path=$(store_option 'magento-path' '/var/www/magento2')
 magento_cloud_path='/root/.magento-cloud'
 composer_path='/home/magento2/.composer'
@@ -288,9 +289,41 @@ mkdir -p $varnish_shared_dir
 echo 'Build docker images'
 docker-compose up --build -d
 
-webserver_container=`docker-compose ps -q $webserver_host`
+webserver_container=$(docker-compose ps -q $webserver_host)
+
 docker exec -it --privileged $webserver_container \
     /bin/sh -c "chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 $magento_path"
+
+cat > m2devbox.sh <<- EOM
+#!/bin/bash
+
+case \$1 in
+    exec|show-name)
+        command=\$1
+        shift
+        ;;
+    *)
+        echo 'Wrong command: only "exec" and "show-name" are supported'
+        exit
+        ;;
+esac
+
+while [ \$# -gt 0 ]; do
+    options="\$options \$1"
+    shift
+done
+
+if [[ \$command = 'exec' ]]; then
+    docker exec -it --privileged -u magento2 $webserver_container \$options
+fi
+
+if [[ \$command = 'show-name' ]]; then
+    echo $webserver_container
+fi
+
+EOM
+
+chmod +x m2devbox.sh
 
 options=$(get_data 'options')
 
