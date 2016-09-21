@@ -1,7 +1,5 @@
 #!/bin/bash
 
-rm -rf tmp
-
 get_data () {
     local file_name=$1
     local folder_path='tmp'
