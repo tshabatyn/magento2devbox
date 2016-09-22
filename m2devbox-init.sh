@@ -3,13 +3,13 @@
 generate_container_name () {
     local service=$1
     local number=1
-
     local name="magento2devbox_${service}_${number}"
 
     while [[ `docker ps -a -q --filter="name=$name"` ]]; do
         ((number++))
         name="magento2devbox_${service}_${number}"
     done
+
     echo $name
 }
 
@@ -131,6 +131,7 @@ request () {
 echo 'Creating docker-compose config'
 
 #Database
+db_container=$(generate_container_name 'db')
 db_host=$(store_option 'db-host' 'db')
 db_user=$(store_option 'db-user' 'root')
 db_password=$(store_option 'db-password' 'root')
@@ -140,40 +141,41 @@ db_home_port=$(get_free_port 1345)
 db_path='/var/lib/mysql'
 db_logs_path='/var/log/mysql'
 db_home_logs_path='./shared/logs/mysql'
-db_container=`generate_container_name db`
 
 if [[ ! $db_home_path ]]; then
     db_home_path='./shared/db'
 fi
 
 #RabbitMQ
+rabbitmq_container=$(generate_container_name 'rabbit')
 rabbitmq_host=$(store_option 'rabbitmq-host' 'rabbit')
 rabbitmq_port=$(store_option 'rabbitmq-port' 5672)
 rabbitmq_admin_port=15672
 rabbitmq_home_port=$(get_free_port $rabbitmq_port)
 rabbitmq_home_admin_port=$(get_free_port 8282)
-rabbit_container=`generate_container_name rabbit`
 
 #Redis
+redis_container=$(generate_container_name 'redis')
 redis_host=$(store_option 'redis-host' 'redis')
-redis_container=`generate_container_name redis`
 
 #Varnish
+varnish_container=$(generate_container_name 'varnish')
+varnish_host='varnish'
 varnish_port=6081
 varnish_home_port=$(get_free_port 1749) && $(store_option 'varnish-home-port' $varnish_home_port) &> /dev/null
 varnish_config_dir='/home/magento2/configs/varnish'
 varnish_config_path=$(store_option 'varnish-config-path' "$varnish_config_dir/default.vcl")
 varnish_shared_dir="./shared/configs/varnish"
 varnish_container_config_path='/etc/varnish/default'
-varnish_container=`generate_container_name varnish`
 
 #Elastic Search
+elastic_container=$(generate_container_name 'elastic')
 elastic_host=$(store_option 'elastic-host' 'elasticsearch')
 elastic_port=$(store_option 'elastic-port' 9200)
 elastic_home_port=$(get_free_port 9200)
-elastic_container=`generate_container_name elastic`
 
 #Web Server
+webserver_container=$(generate_container_name 'web')
 webserver_host=$(store_option 'webserver-host' 'web')
 webserver_port=$(store_option 'webserver-port' 80)
 webserver_ssh_port=22
@@ -183,7 +185,6 @@ webserver_apache_logs_path='/var/log/apache2'
 webserver_phpfpm_logs_path='/var/log/php-fpm'
 webserver_home_apache_logs_path='./shared/logs/apache2'
 webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
-webserver_container=`generate_container_name web`
 
 #Magento
 magento_host=$(store_option 'magento-host' 'localhost')
@@ -207,7 +208,8 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         *)
-            break
+            echo "Error: Unexpected argument \"$1\"!"
+            exit
             ;;
     esac
 done
@@ -248,42 +250,9 @@ cat > docker-compose.yml <<- EOM
 ##
 version: '2'
 services:
-  $db_host:
-    restart: always
-    container_name: $db_container
-    image: mysql:5.6
-    ports:
-      - "$db_home_port:$db_port"
-    environment:
-      - MYSQL_ROOT_PASSWORD=$db_password
-      - MYSQL_DATABASE=$db_name
-    volumes:
-      - "$db_home_path:$db_path"
-      - "$db_home_logs_path:$db_logs_path"
-  $rabbitmq_host:
-    container_name: $rabbit_container
-    image: rabbitmq:3-management
-    ports:
-      - "$rabbitmq_home_admin_port:$rabbitmq_admin_port"
-      - "$rabbitmq_home_port:$rabbitmq_port"
-  $redis_host:
-    container_name: $redis_container
-    image: redis:3.0.7
-  varnish:
-    container_name: $varnish_container
-#    image: magento/magento2devbox_varnish:latest
-    build: varnish
-    volumes:
-      - "$varnish_shared_dir:$varnish_container_config_path"
-    ports:
-      - "$varnish_home_port:$varnish_port"
-  $elastic_host:
-    container_name: $elastic_container
-    image: elasticsearch:latest
-    ports:
-      - "$elastic_home_port:$elastic_port"
   $webserver_host:
     container_name: $webserver_container
+    restart: always
 #    image: magento/magento2devbox_web:latest
     build: web
     volumes:
@@ -297,6 +266,46 @@ services:
     ports:
       - "$webserver_home_port:$webserver_port"
       - "$webserver_home_ssh_port:$webserver_ssh_port"
+  $db_host:
+    container_name: $db_container
+    restart: always
+    image: mysql:5.6
+    ports:
+      - "$db_home_port:$db_port"
+    environment:
+      - MYSQL_ROOT_PASSWORD=$db_password
+      - MYSQL_DATABASE=$db_name
+    volumes:
+      - "$db_home_path:$db_path"
+      - "$db_home_logs_path:$db_logs_path"
+  $varnish_host:
+    container_name: $varnish_container
+    restart: always
+    depends_on:
+      - "$webserver_host"
+#    image: magento/magento2devbox_varnish:latest
+    build: varnish
+    volumes:
+      - "$varnish_shared_dir:$varnish_container_config_path"
+    ports:
+      - "$varnish_home_port:$varnish_port"
+  $redis_host:
+    container_name: $redis_container
+    restart: always
+    image: redis:3.0.7
+  $rabbitmq_host:
+    container_name: $rabbitmq_container
+    restart: always
+    image: rabbitmq:3-management
+    ports:
+      - "$rabbitmq_home_admin_port:$rabbitmq_admin_port"
+      - "$rabbitmq_home_port:$rabbitmq_port"
+  $elastic_host:
+    container_name: $elastic_container
+    restart: always
+    image: elasticsearch:latest
+    ports:
+      - "$elastic_home_port:$elastic_port"
 EOM
 
 echo 'Creating shared folders'
@@ -332,7 +341,7 @@ while [ \$# -gt 0 ]; do
 done
 
 if [[ \$command = 'exec' ]]; then
-    docker exec -it --privileged -u magento2 $webserver_container \$options
+    docker exec -it --privileged -u magento2 $webserver_container\$options
 fi
 
 if [[ \$command = 'show-name' ]]; then
@@ -342,14 +351,11 @@ fi
 EOM
 
 chmod +x m2devbox.sh
-
 options=$(get_data 'options')
 
 if [[ $interactive != 1 ]]; then
     options="$options --no-interaction"
 fi
 
-docker exec -it --privileged -u magento2 $webserver_container \
-    php -f /home/magento2/scripts/m2init magento:install $options
-
+./m2devbox.sh exec php -f /home/magento2/scripts/m2init magento:install $options
 rm -rf tmp
