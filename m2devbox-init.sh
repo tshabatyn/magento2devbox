@@ -168,7 +168,7 @@ webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
 
 #Magento
 magento_host=$(store_option 'magento-host' 'localhost')
-magento_path=$(store_option 'magento-path' '/var/www/magento2')
+magento_path=$(store_option 'magento-path' '/home/magento2/magento2')
 magento_cloud_path='/root/.magento-cloud'
 composer_path='/home/magento2/.composer'
 ssh_path='/home/magento2/.ssh'
@@ -288,9 +288,6 @@ echo 'Build docker images'
 docker-compose up --build -d
 
 webserver_container=$(docker-compose ps -q $webserver_host)
-
-docker exec -it --privileged $webserver_container \
-    /bin/sh -c "chown -R magento2:magento2 /home/magento2 && chown -R magento2:magento2 $magento_path"
 
 cat > m2devbox.sh <<- EOM
 #!/bin/bash

@@ -33,7 +33,7 @@ services:
   web:
     build: ../web
     volumes:
-      - ../shared/magento2:/home/magento2/magento2
+      - ../shared/magento:/home/magento2/magento2
       - ../shared/.composer:/home/magento2/.composer
       - ../shared/.ssh:/home/magento2/.ssh
       - ../shared/.magento-cloud:/home/magento2/.magento-cloud
