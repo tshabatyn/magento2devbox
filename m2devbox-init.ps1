@@ -61,7 +61,7 @@ services:
         - %%%WEBROOT_PATH%%%:%%%MAGENTO_PATH%%%
         - %%%COMPOSER_PATH%%%:/home/magento2/.composer
         - %%%SSH_PATH%%%:/home/magento2/.ssh
-        #    - ./shared/.magento-cloud:/home/magento2/.magento-cloud
+        - ./shared/.magento-cloud:/home/magento2/.magento-cloud
     ports:
         - "%%%WEB_PORT%%%:%%%MAIN_HOST_PORT%%%"
         - "2222:22"

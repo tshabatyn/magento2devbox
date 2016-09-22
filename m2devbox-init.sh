@@ -262,7 +262,10 @@ services:
       - "$webserver_home_apache_logs_path:$webserver_apache_logs_path"
       - "$webserver_home_phpfpm_logs_path:$webserver_phpfpm_logs_path"
       - "$varnish_shared_dir:$varnish_config_dir"
-#      - "$magento_cloud_home_path:$magento_cloud_path"
+      - "$magento_cloud_home_path:$magento_cloud_path"
+    environment:
+      - USE_SHARED_WEBROOT=1
+      - SHARED_CODE_PATH="$magento_path"
     ports:
       - "$webserver_home_port:$webserver_port"
       - "$webserver_home_ssh_port:$webserver_ssh_port"
