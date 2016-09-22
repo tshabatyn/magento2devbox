@@ -1,5 +1,18 @@
 #!/bin/bash
 
+generate_container_name () {
+    local service=$1
+    local number=1
+
+    local name="magento2devbox_${service}_${number}"
+
+    while [[ `docker ps -a -q --filter="name=$name"` ]]; do
+        ((number++))
+        name="magento2devbox_${service}_${number}"
+    done
+    echo $name
+}
+
 get_data () {
     local file_name=$1
     local folder_path='tmp'
@@ -127,6 +140,7 @@ db_home_port=$(get_free_port 1345)
 db_path='/var/lib/mysql'
 db_logs_path='/var/log/mysql'
 db_home_logs_path='./shared/logs/mysql'
+db_container=`generate_container_name db`
 
 if [[ ! $db_home_path ]]; then
     db_home_path='./shared/db'
@@ -138,9 +152,11 @@ rabbitmq_port=$(store_option 'rabbitmq-port' 5672)
 rabbitmq_admin_port=15672
 rabbitmq_home_port=$(get_free_port $rabbitmq_port)
 rabbitmq_home_admin_port=$(get_free_port 8282)
+rabbit_container=`generate_container_name rabbit`
 
 #Redis
 redis_host=$(store_option 'redis-host' 'redis')
+redis_container=`generate_container_name redis`
 
 #Varnish
 varnish_port=6081
@@ -149,11 +165,13 @@ varnish_config_dir='/home/magento2/configs/varnish'
 varnish_config_path=$(store_option 'varnish-config-path' "$varnish_config_dir/default.vcl")
 varnish_shared_dir="./shared/configs/varnish"
 varnish_container_config_path='/etc/varnish/default'
+varnish_container=`generate_container_name varnish`
 
 #Elastic Search
 elastic_host=$(store_option 'elastic-host' 'elasticsearch')
 elastic_port=$(store_option 'elastic-port' 9200)
 elastic_home_port=$(get_free_port 9200)
+elastic_container=`generate_container_name elastic`
 
 #Web Server
 webserver_host=$(store_option 'webserver-host' 'web')
@@ -165,6 +183,7 @@ webserver_apache_logs_path='/var/log/apache2'
 webserver_phpfpm_logs_path='/var/log/php-fpm'
 webserver_home_apache_logs_path='./shared/logs/apache2'
 webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
+webserver_container=`generate_container_name web`
 
 #Magento
 magento_host=$(store_option 'magento-host' 'localhost')
@@ -231,6 +250,7 @@ version: '2'
 services:
   $db_host:
     restart: always
+    container_name: $db_container
     image: mysql:5.6
     ports:
       - "$db_home_port:$db_port"
@@ -241,13 +261,16 @@ services:
       - "$db_home_path:$db_path"
       - "$db_home_logs_path:$db_logs_path"
   $rabbitmq_host:
+    container_name: $rabbit_container
     image: rabbitmq:3-management
     ports:
       - "$rabbitmq_home_admin_port:$rabbitmq_admin_port"
       - "$rabbitmq_home_port:$rabbitmq_port"
   $redis_host:
+    container_name: $redis_container
     image: redis:3.0.7
   varnish:
+    container_name: $varnish_container
 #    image: magento/magento2devbox_varnish:latest
     build: varnish
     volumes:
@@ -255,10 +278,12 @@ services:
     ports:
       - "$varnish_home_port:$varnish_port"
   $elastic_host:
+    container_name: $elastic_container
     image: elasticsearch:latest
     ports:
       - "$elastic_home_port:$elastic_port"
   $webserver_host:
+    container_name: $webserver_container
 #    image: magento/magento2devbox_web:latest
     build: web
     volumes:
@@ -286,8 +311,6 @@ mkdir -p $varnish_shared_dir
 
 echo 'Build docker images'
 docker-compose up --build -d
-
-webserver_container=$(docker-compose ps -q $webserver_host)
 
 cat > m2devbox.sh <<- EOM
 #!/bin/bash
