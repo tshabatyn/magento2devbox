@@ -19,7 +19,7 @@ services:
       - "../shared/configs/varnish:/home/magento2/configs/varnish"
       - "../shared/.magento-cloud:/root/.magento-cloud"
     environment:
-      - USE_SHARED_WEBROOT=1
+      - USE_SHARED_WEBROOT=0
       - SHARED_CODE_PATH="/home/magento2/magento2"
     ports:
       - "52880:80"
