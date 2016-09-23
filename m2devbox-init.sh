@@ -193,8 +193,11 @@ webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
 magento_host=$(store_option 'magento-host' 'localhost')
 magento_path=$(store_option 'magento-path' '/home/magento2/magento2')
 magento_cloud_path='/root/.magento-cloud'
+magento_cloud_home_path='./shared/.magento-cloud'
 composer_path='/home/magento2/.composer'
+composer_home_path='./shared/.composer'
 ssh_path='/home/magento2/.ssh'
+ssh_home_path='./shared/.ssh'
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -241,18 +244,6 @@ else
     fi
 
     store_data 'magento_home_path' $magento_home_path &> /dev/null
-fi
-
-if [[ ! $magento_cloud_home_path ]]; then
-    magento_cloud_home_path='./shared/.magento-cloud'
-fi
-
-if [[ ! $composer_home_path ]]; then
-    composer_home_path='./shared/.composer'
-fi
-
-if [[ ! $ssh_home_path ]]; then
-    ssh_home_path='./shared/.ssh'
 fi
 
 store_option 'magento-sources-reuse' $magento_sources_reuse &> /dev/null
