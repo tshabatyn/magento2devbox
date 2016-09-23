@@ -15,7 +15,7 @@ generate_container_name () {
 
 get_data () {
     local file_name=$1
-    local folder_path='tmp'
+    local folder_path='data'
     local file_path="$folder_path/$file_name"
     local contents
 
@@ -34,7 +34,7 @@ store_data () {
     local key_value_delimiter=$5
     local prefix=$6
     local suffix=$7
-    local folder_path='tmp'
+    local folder_path='data'
     local file_path="$folder_path/$file_name"
     local contents=$(get_data $file_name)
 
@@ -224,8 +224,20 @@ else
     fi
 
     if [[ $magento_sources_reuse = 1 ]]; then
-        request 'magento_home_path' 'Please provide full path to the Magento folder on local machine'
+        magento_default_home_path=$(get_data 'magento_home_path')
+
+        request 'magento_home_path' \
+            'Please provide full path to the Magento folder on local machine' \
+            0 \
+            $magento_default_home_path
+
+        if [[ ! $magento_home_path ]]; then
+            echo "Error: Magento folder was not specified!"
+            exit
+        fi
     fi
+
+    store_data 'magento_home_path' $magento_home_path &> /dev/null
 fi
 
 if [[ ! $magento_cloud_home_path ]]; then
@@ -361,4 +373,3 @@ if [[ $interactive != 1 ]]; then
 fi
 
 ./m2devbox.sh exec php -f /home/magento2/scripts/m2init magento:install $options
-rm -rf tmp
