@@ -1,5 +1,8 @@
 #!/bin/bash
 
+rm -f data/options
+rm -f data/ports
+
 generate_container_name () {
     local service=$1
     local number=1
