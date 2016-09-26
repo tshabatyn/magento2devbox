@@ -108,6 +108,11 @@ function request ($varName, $question, $isBoolean, $defaultValue, $value, $outpu
     return $output | Out-Null
 }
 
+if (Test-Path docker-compose.yml) {
+    Write-Host "Stopping current containers"
+    docker stop $(docker-compose ps -q) | Out-Null
+}
+
 Write-Host "Creating docker-compose config"
 
 #Database
