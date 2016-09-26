@@ -1,11 +1,11 @@
 if (Test-Path data/options) {
-    Remove-Item data/options -Recurse -Force
+    Remove-Item data/options -Force
 }
 if (Test-Path data/ports) {
-    Remove-Item data/ports -Recurse -Force
+    Remove-Item data/ports -Force
 }
 
-function generate_container_name ($service, $number, $name="magento2devbox_${service}_${number}") {
+function generate_container_name ($service, $number = 1, $name="magento2devbox_${service}_${number}") {
     while (docker ps -a -q --filter="name=$name") {
         $number++
         $name = "magento2devbox_${service}_${number}"
@@ -146,7 +146,7 @@ $varnish_home_port = get_free_port 1749
 store_option 'varnish-home-port' $varnish_home_port | Out-Null
 $varnish_config_dir = '/home/magento2/configs/varnish'
 $varnish_config_path = store_option 'varnish-config-path' "$varnish_config_dir/default.vcl"
-$varnish_shared_dir = "./shared/configs/varnish"
+$varnish_home_path = "./shared/configs/varnish"
 $varnish_container_config_path = '/etc/varnish/default'
 
 #Elastic Search
@@ -173,8 +173,12 @@ $magento_host = store_option 'magento-host' 'localhost'
 $magento_path = store_option 'magento-path' '/home/magento2/magento2'
 $magento_cloud_path = '/root/.magento-cloud'
 $magento_cloud_home_path = './shared/.magento-cloud'
+
+#Composer
 $composer_path = '/home/magento2/.composer'
 $composer_home_path = './shared/.composer'
+
+#SSH
 $ssh_path = '/home/magento2/.ssh'
 $ssh_home_path = './shared/.ssh'
 
@@ -210,16 +214,19 @@ if ($magento_home_path) {
     $magento_home_path='./shared/webroot'
 
     if (!$magento_sources_reuse) {
-        request 'magento_sources_reuse' 'Do you have existing copy of Magento 2?' 1
+        request 'magento_sources_reuse' 'Do you want to use custom location for Magento sources on local machine?' 1
     }
     if ($magento_sources_reuse -eq 1) {
         $magento_default_home_path = get_data 'magento_home_path'
 
-        request 'magento_home_path' 'Please provide full path to the Magento folder on local machine' 0 $magento_default_home_path
+        request 'magento_home_path' 'Please provide full path to the Magento sources on local machine' 0 $magento_default_home_path
 
         if (!magento_home_path) {
             echo "Error: Magento folder was not specified!"
         }
+    }
+    if (Test-Path data/magento_home_path) {
+        Remove-Item data/magento_home_path -Force
     }
     store_data 'magento_home_path' $magento_home_path | Out-Null
 }
@@ -245,7 +252,7 @@ services:
           - "%%%SSH_HOME_PATH%%%:%%%SSH_PATH%%%"
           - "%%%WEBSERVER_HOME_APACHE_LOGS_PATH%%%:%%%WEBSERVER_APACHE_LOGS_PATH%%%"
           - "%%%WEBSERVER_HOME_PHPFPM_LOGS_PATH%%%:%%%WEBSERVER_PHPFPM_LOGS_PATH%%%"
-          - "%%%VARNISH_SHARED_DIR%%%:%%%VARNISH_CONFIG_DIR%%%"
+          - "%%%VARNISH_HOME_PATH%%%:%%%VARNISH_CONFIG_DIR%%%"
           - "%%%MAGENTO_CLOUD_HOME_PATH%%%:%%%MAGENTO_CLOUD_PATH%%%"
       environment:
           - USE_SHARED_WEBROOT=0
@@ -273,7 +280,7 @@ services:
   #     image: magento/magento2devbox_varnish:latest
         build: varnish
         volumes:
-            - "%%%VARNISH_SHARED_DIR%%%:%%%VARNISH_CONTAINER_CONFIG_PATH%%%"
+            - "%%%VARNISH_HOME_PATH%%%:%%%VARNISH_CONTAINER_CONFIG_PATH%%%"
         ports:
             - "%%%VARNISH_HOME_PORT%%%:%%%VARNISH_PORT%%%"
   %%%REDIS_HOST%%%:
@@ -326,7 +333,7 @@ $yml = $yml -Replace "%%%DB_HOME_LOGS_PATH%%%", $db_home_logs_path
 $yml = $yml -Replace "%%%DB_LOGS_PATH%%%", $db_logs_path
 $yml = $yml -Replace "%%%VARNISH_HOST%%%", $varnish_host
 $yml = $yml -Replace "%%%VARNISH_CONTAINER%%%", $varnish_container
-$yml = $yml -Replace "%%%VARNISH_SHARED_DIR%%%", $varnish_shared_dir
+$yml = $yml -Replace "%%%VARNISH_HOME_PATH%%%", $varnish_home_path
 $yml = $yml -Replace "%%%VARNISH_CONTAINER_CONFIG_PATH%%%", $varnish_container_config_path
 $yml = $yml -Replace "%%%VARNISH_HOME_PORT%%%", $varnish_home_port
 $yml = $yml -Replace "%%%VARNISH_PORT%%%", $varnish_port
@@ -366,8 +373,8 @@ if ((Test-Path $webserver_home_phpfpm_logs_path) -eq 0) {
 if ((Test-Path $db_home_logs_path) -eq 0) {
     mkdir $db_home_logs_path
 }
-if ((Test-Path $varnish_shared_dir) -eq 0) {
-    mkdir $varnish_shared_dir
+if ((Test-Path $varnish_home_path) -eq 0) {
+    mkdir $varnish_home_path
 }
 
 Write-Host "Build docker images"
@@ -405,13 +412,20 @@ $ps1 = $ps1 -Replace "%%%OPTIONS%%%", {$options}
 $ps1 = $ps1 -Replace "%%%WEBSERVER_CONTAINER%%%", $webserver_container
 Set-Content m2devbox.ps1 $ps1
 
+icacls m2devbox.ps1 /grant Everyone:F
 $options = get_data 'options'
 
 if ($interactive -ne 1) {
     $options = "$options --no-interaction"
 }
 
-./m2devbox.ps1 exec php -f /home/magento2/scripts/m2init magento:install $options
+if (Test-Path data/ports) {
+    Remove-Item data/ports -Force
+}
 
 clear-variable -name magento_home_path
 clear-variable -name magento_sources_reuse
+
+docker exec -it --privileged -u root $webserver_container chown -R magento2:magento2 .ssh .composer
+#./m2devbox.ps1 exec php -f /home/magento2/scripts/m2init magento:install $options
+docker exec -it --privileged -u magento2 $webserver_container php -f /home/magento2/scripts/m2init magento:install $options
