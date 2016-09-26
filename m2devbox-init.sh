@@ -131,6 +131,10 @@ request () {
     echo $output
 }
 
+echo 'Stopping current containers'
+
+docker stop $(docker-compose ps -q)
+
 echo 'Creating docker-compose config'
 
 #Database
