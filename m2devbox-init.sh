@@ -194,8 +194,12 @@ magento_host=$(store_option 'magento-host' 'localhost')
 magento_path=$(store_option 'magento-path' '/home/magento2/magento2')
 magento_cloud_path='/root/.magento-cloud'
 magento_cloud_home_path='./shared/.magento-cloud'
+
+#Composer
 composer_path='/home/magento2/.composer'
 composer_home_path='./shared/.composer'
+
+#SSH
 ssh_path='/home/magento2/.ssh'
 ssh_home_path='./shared/.ssh'
 
@@ -226,14 +230,14 @@ else
     magento_home_path='./shared/webroot'
 
     if [[ ! $magento_sources_reuse ]]; then
-        request 'magento_sources_reuse' 'Do you have existing copy of Magento 2?' 1
+        request 'magento_sources_reuse' 'Do you want to use custom location for Magento sources on local machine?' 1
     fi
 
     if [[ $magento_sources_reuse = 1 ]]; then
         magento_default_home_path=$(get_data 'magento_home_path')
 
         request 'magento_home_path' \
-            'Please provide full path to the Magento folder on local machine' \
+            'Please provide full path to the Magento sources on local machine' \
             0 \
             $magento_default_home_path
 
@@ -243,6 +247,7 @@ else
         fi
     fi
 
+    rm -f data/magento_home_path
     store_data 'magento_home_path' $magento_home_path &> /dev/null
 fi
 
@@ -366,4 +371,5 @@ if [[ $interactive != 1 ]]; then
     options="$options --no-interaction"
 fi
 
+rm -f data/ports
 ./m2devbox.sh exec php -f /home/magento2/scripts/m2init magento:install $options
