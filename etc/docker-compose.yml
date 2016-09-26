@@ -6,7 +6,7 @@
 version: '2'
 services:
   web:
-    container_name: magento2devbox_web_2
+    container_name: magento2devbox_web_9999
     restart: always
 #    image: magento/magento2devbox_web:latest
     build: web
@@ -25,7 +25,7 @@ services:
       - "52880:80"
       - "14631:22"
   db:
-    container_name: magento2devbox_db_2
+    container_name: magento2devbox_db_9999
     restart: always
     image: mysql:5.6
     ports:
@@ -37,7 +37,7 @@ services:
       - "../shared/db:/var/lib/mysql"
       - "../shared/logs/mysql:/var/log/mysql"
   varnish:
-    container_name: magento2devbox_varnish_2
+    container_name: magento2devbox_varnish_9999
     restart: always
     depends_on:
       - "web"
@@ -48,18 +48,18 @@ services:
     ports:
       - "60780:6081"
   redis:
-    container_name: magento2devbox_redis_2
+    container_name: magento2devbox_redis_9999
     restart: always
     image: redis:3.0.7
   rabbit:
-    container_name: magento2devbox_rabbit_2
+    container_name: magento2devbox_rabbit_9999
     restart: always
     image: rabbitmq:3-management
     ports:
       - "25481:15672"
       - "64341:5672"
   elasticsearch:
-    container_name: magento2devbox_elastic_2
+    container_name: magento2devbox_elastic_9999
     restart: always
     image: elasticsearch:latest
     ports:
