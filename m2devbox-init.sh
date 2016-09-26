@@ -131,9 +131,10 @@ request () {
     echo $output
 }
 
-echo 'Stopping current containers'
-
-docker stop $(docker-compose ps -q)
+if [ -f docker-compose.yml ]; then
+    echo 'Stopping current containers'
+    docker stop $(docker-compose ps -q) >> /dev/null
+fi
 
 echo 'Creating docker-compose config'
 
