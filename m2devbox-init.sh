@@ -168,7 +168,7 @@ varnish_port=6081
 varnish_home_port=$(get_free_port 1749) && $(store_option 'varnish-home-port' $varnish_home_port) &> /dev/null
 varnish_config_dir='/home/magento2/configs/varnish'
 varnish_config_path=$(store_option 'varnish-config-path' "$varnish_config_dir/default.vcl")
-varnish_shared_dir="./shared/configs/varnish"
+varnish_home_path="./shared/configs/varnish"
 varnish_container_config_path='/etc/varnish/default'
 
 #Elastic Search
@@ -272,7 +272,7 @@ services:
       - "$ssh_home_path:$ssh_path"
       - "$webserver_home_apache_logs_path:$webserver_apache_logs_path"
       - "$webserver_home_phpfpm_logs_path:$webserver_phpfpm_logs_path"
-      - "$varnish_shared_dir:$varnish_config_dir"
+      - "$varnish_home_path:$varnish_config_dir"
       - "$magento_cloud_home_path:$magento_cloud_path"
     environment:
       - USE_SHARED_WEBROOT=0
@@ -300,7 +300,7 @@ services:
 #    image: magento/magento2devbox_varnish:latest
     build: varnish
     volumes:
-      - "$varnish_shared_dir:$varnish_container_config_path"
+      - "$varnish_home_path:$varnish_container_config_path"
     ports:
       - "$varnish_home_port:$varnish_port"
   $redis_host:
@@ -330,7 +330,7 @@ mkdir -p $db_home_path
 mkdir -p $webserver_home_apache_logs_path
 mkdir -p $webserver_home_phpfpm_logs_path
 mkdir -p $db_home_logs_path
-mkdir -p $varnish_shared_dir
+mkdir -p $varnish_home_path
 
 echo 'Build docker images'
 docker-compose up --build -d
