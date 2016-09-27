@@ -8,8 +8,8 @@ services:
   web:
     container_name: magento2devbox_web_9999
     restart: always
-#    image: magento/magento2devbox_web:latest
-    build: web
+    image: magento/magento2devbox_web:latest
+#    build: web
     volumes:
       - "../shared/webroot:/home/magento2/magento2"
       - "../shared/.composer:/home/magento2/.composer"
@@ -41,8 +41,8 @@ services:
     restart: always
     depends_on:
       - "web"
-#    image: magento/magento2devbox_varnish:latest
-    build: varnish
+    image: magento/magento2devbox_varnish:latest
+#    build: varnish
     volumes:
       - "../shared/configs/varnish:/etc/varnish/default"
     ports:
