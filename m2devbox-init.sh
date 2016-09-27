@@ -378,3 +378,24 @@ fi
 
 rm -f data/ports
 ./m2devbox.sh exec php -f /home/magento2/scripts/m2init magento:install $options
+
+cat > debug-test.sh <<- EOM
+#!/bin/bash
+
+case \$1 in
+    unit|integration)
+        command=\$1
+        ;;
+    *)
+        echo 'Wrong test type: only unit and integration are supported'
+        exit
+        ;;
+esac
+
+ssh -p$webserver_home_ssh_port magento2@127.0.0.1 /usr/local/bin/php -dxdebug.remote_autostart=1 \\
+    /var/www/magento2/vendor/phpunit/phpunit/phpunit --configuration \\
+    /var/www/magento2/dev/tests/\$command/phpunit.xml.dist \\
+    \$2
+EOM
+
+chmod +x debug-test.sh
