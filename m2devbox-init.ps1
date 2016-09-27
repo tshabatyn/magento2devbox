@@ -175,7 +175,7 @@ $webserver_home_phpfpm_logs_path = './shared/logs/php-fpm'
 
 #Magento
 $magento_host = store_option 'magento-host' 'localhost'
-$magento_path = store_option 'magento-path' '/home/magento2/magento2'
+$magento_path = store_option 'magento-path' '/var/www/magento2'
 $magento_cloud_path = '/root/.magento-cloud'
 $magento_cloud_home_path = './shared/.magento-cloud'
 
@@ -260,7 +260,7 @@ services:
           - "%%%VARNISH_HOME_PATH%%%:%%%VARNISH_CONFIG_DIR%%%"
           - "%%%MAGENTO_CLOUD_HOME_PATH%%%:%%%MAGENTO_CLOUD_PATH%%%"
       environment:
-          - USE_SHARED_WEBROOT=0
+          - USE_SHARED_WEBROOT=1
           - SHARED_CODE_PATH="%%%MAGENTO_PATH%%%"
       ports:
           - "%%%WEBSERVER_HOME_PORT%%%:%%%WEBSERVER_PORT%%%"

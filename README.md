@@ -10,7 +10,7 @@ To initialize and update submodules, run `git submodule update --init` command. 
 
 ## Installation (Windows 10)
 1. Clone this repository && run `cd magento2-dev-box` in terminal
-2. Run `& ".\install.ps1"` in PowerShell - during command execution you will be asked for your magento repo credentials
+2. Run `.\m2devbox-init.ps1` in PowerShell - during command execution you will be asked for your magento repo credentials
 3. Open in browser http://localhost:1748/
 
 ## Configuring PhpStorm
