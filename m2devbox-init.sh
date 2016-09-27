@@ -399,3 +399,5 @@ ssh -p$webserver_home_ssh_port magento2@127.0.0.1 /usr/local/bin/php -dxdebug.re
 EOM
 
 chmod +x debug-test.sh
+
+docker exec -it --privileged $webserver_container chown -R magento2:magento2 /var/www/magento2
