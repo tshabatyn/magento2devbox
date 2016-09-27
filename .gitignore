@@ -3,3 +3,5 @@
 /shared
 /web
 /varnish
+/data
+/m2devbox.sh

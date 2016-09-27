@@ -11,16 +11,13 @@ services:
 #    image: magento/magento2devbox_web:latest
     build: web
     volumes:
-      - "../shared/webroot:/home/magento2/magento2"
-      - "../shared/.composer:/home/magento2/.composer"
-      - "../shared/.ssh:/home/magento2/.ssh"
-      - "../shared/logs/apache2:/var/log/apache2"
-      - "../shared/logs/php-fpm:/var/log/php-fpm"
-      - "../shared/configs/varnish:/home/magento2/configs/varnish"
-      - "../shared/.magento-cloud:/root/.magento-cloud"
-    environment:
-      - USE_SHARED_WEBROOT=0
-      - SHARED_CODE_PATH="/home/magento2/magento2"
+      - "./shared/webroot:/var/www/magento2"
+      - "./shared/.composer:/home/magento2/.composer"
+      - "./shared/.ssh:/home/magento2/.ssh"
+      - "./shared/logs/apache2:/var/log/apache2"
+      - "./shared/logs/php-fpm:/var/log/php-fpm"
+      - "./shared/configs/varnish:/home/magento2/configs/varnish"
+      - "./shared/.magento-cloud:/root/.magento-cloud"
     ports:
       - "52880:80"
       - "14631:22"
@@ -34,8 +31,8 @@ services:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=magento2
     volumes:
-      - "../shared/db:/var/lib/mysql"
-      - "../shared/logs/mysql:/var/log/mysql"
+      - "./shared/db:/var/lib/mysql"
+      - "./shared/logs/mysql:/var/log/mysql"
   varnish:
     container_name: magento2devbox_varnish_9999
     restart: always
@@ -44,7 +41,7 @@ services:
 #    image: magento/magento2devbox_varnish:latest
     build: varnish
     volumes:
-      - "../shared/configs/varnish:/etc/varnish/default"
+      - "./shared/configs/varnish:/etc/varnish/default"
     ports:
       - "60780:6081"
   redis:
