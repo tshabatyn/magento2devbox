@@ -196,7 +196,8 @@ webserver_home_phpfpm_logs_path='./shared/logs/php-fpm'
 
 #Magento
 magento_host=$(store_option 'magento-host' 'localhost')
-magento_path=$(store_option 'magento-path' '/home/magento2/magento2')
+magento_path=$(store_option 'magento-path' '/var/www/magento2')
+magento_path_shared='/home/magento2/magento2'
 magento_cloud_path='/root/.magento-cloud'
 magento_cloud_home_path='./shared/.magento-cloud'
 
@@ -272,7 +273,7 @@ services:
 #    image: magento/magento2devbox_web:latest
     build: web
     volumes:
-      - "$magento_home_path:$magento_path"
+      - "$magento_home_path:$magento_path_shared"
       - "$composer_home_path:$composer_path"
       - "$ssh_home_path:$ssh_path"
       - "$webserver_home_apache_logs_path:$webserver_apache_logs_path"
@@ -281,7 +282,7 @@ services:
       - "$magento_cloud_home_path:$magento_cloud_path"
     environment:
       - USE_SHARED_WEBROOT=0
-      - SHARED_CODE_PATH="$magento_path"
+      - SHARED_CODE_PATH="$magento_path_shared"
     ports:
       - "$webserver_home_port:$webserver_port"
       - "$webserver_home_ssh_port:$webserver_ssh_port"
@@ -399,5 +400,3 @@ ssh -p$webserver_home_ssh_port magento2@127.0.0.1 /usr/local/bin/php -dxdebug.re
 EOM
 
 chmod +x debug-test.sh
-
-docker exec -it --privileged $webserver_container chown -R magento2:magento2 /var/www/magento2
