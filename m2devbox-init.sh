@@ -379,7 +379,7 @@ fi
 rm -f data/ports
 ./m2devbox.sh exec php -f /home/magento2/scripts/m2init magento:install $options
 
-cat > debug-test.sh <<- EOM
+cat > m2devbox-debug-test.sh <<- EOM
 #!/bin/bash
 
 case \$1 in
