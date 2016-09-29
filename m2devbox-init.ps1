@@ -401,7 +401,7 @@ if (%%%ARGS%%%.Length -gt 0) {
     %%%OPTIONS%%% = "%%%ARRAYLIST%%%"
 
     if (%%%COMMAND%%% -eq 'exec') {
-        docker exec -it --privileged -u magento2 %%%WEBSERVER_CONTAINER%%% %%%OPTIONS%%%
+        Invoke-Expression "docker exec -it --privileged -u magento2 %%%WEBSERVER_CONTAINER%%% %%%OPTIONS%%%"
     }
 
     if (%%%COMMAND%%% -eq 'show-name') {
@@ -432,5 +432,4 @@ clear-variable -name magento_home_path
 clear-variable -name magento_sources_reuse
 
 docker exec -it --privileged -u root $webserver_container chown -R magento2:magento2 .ssh .composer
-#./m2devbox.ps1 exec php -f /home/magento2/scripts/m2init magento:install $options
-docker exec -it --privileged -u magento2 $webserver_container php -f /home/magento2/scripts/m2init magento:install $options
+Invoke-Expression ".\m2devbox.ps1 exec php -f /home/magento2/scripts/m2init magento:install $options"
