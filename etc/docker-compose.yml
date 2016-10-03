@@ -64,3 +64,8 @@ services:
     image: elasticsearch:latest
     ports:
       - "4604:9200"
+
+  mailcatcher:
+    image: schickling/mailcatcher
+    ports:
+      - "1080:1080"

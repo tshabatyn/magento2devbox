@@ -182,6 +182,12 @@ elastic_host=$(store_option 'elastic-host' 'elasticsearch')
 elastic_port=$(store_option 'elastic-port' 9200)
 elastic_home_port=$(get_free_port 9200)
 
+#Mailcatcher
+mailcatcher_host=$(store_option 'mailcatcher-host' 'mailcatcher')
+mailcatcher_container=$(generate_container_name 'mailcatcher')
+mailcatcher_port=$(store_option 'mailcatcher-port' 1080)
+mailcatcher_home_port=$(get_free_port 1080)
+
 #Web Server
 webserver_container=$(generate_container_name 'web')
 webserver_host=$(store_option 'webserver-host' 'web')
@@ -326,6 +332,12 @@ services:
     image: elasticsearch:latest
     ports:
       - "$elastic_home_port:$elastic_port"
+  $mailcatcher_host:
+    container_name: $mailcatcher_container
+    restart: always
+    image: schickling/mailcatcher:latest
+    ports:
+      - "$mailcatcher_home_port:$mailcatcher_port"
 EOM
 
 echo 'Creating shared folders'
