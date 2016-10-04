@@ -162,8 +162,8 @@ $elastic_home_port = get_free_port 9200
 
 #Mail catcher
 $mailcatcher_container = generate_container_name 'mailcatcher'
-$mailcatcher_host = store_option 'mailcatcher-host' 'mailcatcher'
-$mailcatcher_port = store_option 'mailcatcher-port' 1080
+$mailcatcher_host = 'mailcatcher'
+$mailcatcher_port = 1080
 $mailcatcher_home_port = get_free_port 1080
 
 #Web Server

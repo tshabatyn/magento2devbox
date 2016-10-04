@@ -183,9 +183,9 @@ elastic_port=$(store_option 'elastic-port' 9200)
 elastic_home_port=$(get_free_port 9200)
 
 #Mailcatcher
-mailcatcher_host=$(store_option 'mailcatcher-host' 'mailcatcher')
+mailcatcher_host='mailcatcher'
 mailcatcher_container=$(generate_container_name 'mailcatcher')
-mailcatcher_port=$(store_option 'mailcatcher-port' 1080)
+mailcatcher_port=1080
 mailcatcher_home_port=$(get_free_port 1080)
 
 #Web Server
