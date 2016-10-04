@@ -160,6 +160,12 @@ $elastic_host = store_option 'elastic-host' 'elasticsearch'
 $elastic_port = store_option 'elastic-port' 9200
 $elastic_home_port = get_free_port 9200
 
+#Mail catcher
+$mailcatcher_container = generate_container_name 'mailcatcher'
+$mailcatcher_host = store_option 'mailcatcher-host' 'mailcatcher'
+$mailcatcher_port = store_option 'mailcatcher-port' 1080
+$mailcatcher_home_port = get_free_port 1080
+
 #Web Server
 $webserver_container = generate_container_name 'web'
 $webserver_host = store_option 'webserver-host' 'web'
@@ -305,6 +311,12 @@ services:
       image: elasticsearch:latest
       ports:
           - "%%%ELASTIC_HOME_PORT%%%:%%%ELASTIC_PORT%%%"
+  %%%MAILCATCHER_HOST%%%:
+      container_name: %%%MAILCATCHER_CONTAINER%%%
+      restart: always
+      image: schickling/mailcatcher:latest
+      ports:
+          - "%%%MAILCATCHER_HOME_PORT%%%:%%%MAILCATCHER_PORT%%%"
 "@
 
 $yml = $yml -Replace "%%%WEBSERVER_HOST%%%", $webserver_host
@@ -354,6 +366,10 @@ $yml = $yml -Replace "%%%ELASTIC_HOST%%%", $elastic_host
 $yml = $yml -Replace "%%%ELASTIC_CONTAINER%%%", $elastic_container
 $yml = $yml -Replace "%%%ELASTIC_HOME_PORT%%%", $elastic_home_port
 $yml = $yml -Replace "%%%ELASTIC_PORT%%%", $elastic_port
+$yml = $yml -Replace "%%%MAILCATCHER_HOST%%%", $mailcatcher_host
+$yml = $yml -Replace "%%%MAILCATCHER_CONTAINER%%%", $mailcatcher_container
+$yml = $yml -Replace "%%%MAILCATCHER_HOME_PORT%%%", $mailcatcher_home_port
+$yml = $yml -Replace "%%%MAILCATCHER_PORT%%%", $mailcatcher_port
 Set-Content docker-compose.yml $yml
 
 Write-Host "Creating shared folders"
